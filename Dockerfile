@@ -3,7 +3,7 @@ FROM golang:1.19 AS builder
 COPY . /builder
 WORKDIR /builder
 
-RUN make build
+RUN export GOPROXY=https://goproxy.cn && make build
 
 FROM alpine:3
 

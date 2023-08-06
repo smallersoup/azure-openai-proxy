@@ -3,13 +3,14 @@ package azure
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"text/template"
+
+	"github.com/pkg/errors"
 )
 
 type DeploymentConfig struct {
@@ -19,6 +20,20 @@ type DeploymentConfig struct {
 	ApiKey         string   `yaml:"api_key" json:"api_key" mapstructure:"api_key"`                         // secrect key1 or 2
 	ApiVersion     string   `yaml:"api_version" json:"api_version" mapstructure:"api_version"`             // deployment version, not required
 	EndpointUrl    *url.URL // url.URL form deployment endpoint
+}
+
+type ModelAzure struct {
+	MaxTokens       int        `json:"max_tokens"`
+	Model           string     `json:"model"`
+	Temperature     float64    `json:"temperature"`
+	TopP            int        `json:"top_p"`
+	PresencePenalty int        `json:"presence_penalty"`
+	Messages        []Messages `json:"messages"`
+	Stream          bool       `json:"stream"`
+}
+type Messages struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }
 
 type Config struct {

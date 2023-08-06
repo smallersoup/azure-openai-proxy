@@ -2,8 +2,8 @@ package azure
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/stulzq/azure-openai-proxy/util"
 	"io"
 	"log"
 	"net/http"
@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/bytedance/sonic"
+	"github.com/stulzq/azure-openai-proxy/util"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -37,22 +39,47 @@ func Proxy(c *gin.Context, requestConverter RequestConverter) {
 			return
 		}
 		body, _ := io.ReadAll(req.Body)
+
+		var model string
+
+		// 解析 JSON 数据为一个 map 对象
+		var data map[string]interface{}
+		err := json.Unmarshal(body, &data)
+		if err != nil {
+			log.Println("解析 JSON 数据失败：", err)
+		}
+
+		key := "model"
+		model = (data[key]).(string)
+		delete(data, key)
+		// 将修改后的 map 对象重新序列化为 []byte 数据
+		modifiedData, err := json.Marshal(data)
+		if err != nil {
+			log.Println("序列化 JSON 数据失败：", err)
+		}
+
+		body = modifiedData
+		log.Println(string(modifiedData))
+
 		req.Body = io.NopCloser(bytes.NewBuffer(body))
+		req.ContentLength = int64(len(body))
 
 		// get model from url params or body
-		model := c.Param("model")
 		if model == "" {
-			_model, err := sonic.Get(body, "model")
-			if err != nil {
-				util.SendError(c, errors.Wrap(err, "get model error"))
-				return
+			model = c.Param("model")
+			if model == "" {
+				_model, err := sonic.Get(body, "model")
+				if err != nil {
+					util.SendError(c, errors.Wrap(err, "get model error"))
+					return
+				}
+				_modelStr, err := _model.String()
+				if err != nil {
+					util.SendError(c, errors.Wrap(err, "get model name error"))
+					return
+				}
+				model = _modelStr
 			}
-			_modelStr, err := _model.String()
-			if err != nil {
-				util.SendError(c, errors.Wrap(err, "get model name error"))
-				return
-			}
-			model = _modelStr
 		}
 
 		// get deployment from request
