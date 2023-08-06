@@ -52,6 +52,9 @@ func Proxy(c *gin.Context, requestConverter RequestConverter) {
 		key := "model"
 		model = (data[key]).(string)
 		delete(data, key)
+		delete(data, "top_p")
+		delete(data, "presence_penalty")
+		delete(data, "max_tokens")
 		// 将修改后的 map 对象重新序列化为 []byte 数据
 		modifiedData, err := json.Marshal(data)
 		if err != nil {
